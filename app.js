@@ -1,6 +1,8 @@
+// ==========================================================================
 // CONFIGURACIÓN DE CREDENCIALES DE TU PROYECTO DE SUPABASE
+// ==========================================================================
 const SUPABASE_URL = "https://cozwiiezfkzgidivlamd.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_muj_5eJZQMX_neliIphTcA_GmaACXfc";
+const SUPABASE_ANON_KEY = "sb_publishable_muj_5eJZQMX_neliIphTcA_GmaACXfc"; // Reemplaza con tu clave completa de la captura
 
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -16,7 +18,7 @@ const tableLoader = document.getElementById('tableLoader');
 const responseMessage = document.getElementById('responseMessage');
 const btnSubmit = document.getElementById('btnSubmit');
 
-// Almacén global local para no sobrecargar de peticiones a Supabase al filtrar
+// Almacén global local para gestionar el filtrado instantáneo
 let databaseMascotas = [];
 
 // ==========================================================================
@@ -29,16 +31,16 @@ async function inicializarCatalogos() {
         const { data: listAtenciones } = await _supabase.from('tipos_atencion').select('*');
         const { data: listCondiciones } = await _supabase.from('condiciones_medicas').select('*');
 
-        // Llenar select de Especies en el formulario
+        // Llenar select de Especies en el formulario de registro
         speciesSelect.innerHTML = '<option value="">-- Especie --</option>';
         listEspecies.forEach(e => {
             speciesSelect.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
         });
 
-        // Llenar select de Especies para el FILTRO OBLIGATORIO (Incluye la opción "Todos")
+        // Llenar select de Especies para el FILTRO OBLIGATORIO usando el ID en el value
         filterSpecies.innerHTML = '<option value="TODOS">🐾 Mostrar Todos</option>';
         listEspecies.forEach(e => {
-            filterSpecies.innerHTML += `<option value="${e.nombre}">${e.nombre}</option>`;
+            filterSpecies.innerHTML += `<option value="${e.id}">${e.nombre}</option>`;
         });
 
         // Llenar select de Razas
@@ -65,19 +67,20 @@ async function inicializarCatalogos() {
 }
 
 // ==========================================================================
-// 2. LISTAR REGISTROS (Mascotas registradas con sus JOINS correspondientes)
+// 2. LISTAR REGISTROS (Mascotas registradas con JOINS)
 // ==========================================================================
 async function cargarMascotasRegistradas() {
     try {
         tableLoader.textContent = "Accediendo al historial clínico cloud...";
         tableLoader.classList.remove('hidden');
 
-        // Realizamos el JOIN multidireccional con las 4 tablas catálogo
+        // Traemos las relaciones completas de texto usando JOINS
         const { data, error } = await _supabase
             .from('mascotas')
             .select(`
                 id, nombre_mascota, edad_mascota, peso,
                 nombre_dueno, apellido_dueno, dni_dueno, celular, correo, observaciones,
+                id_especie,
                 especies(nombre),
                 razas(nombre),
                 tipos_atencion(nombre),
@@ -87,7 +90,7 @@ async function cargarMascotasRegistradas() {
 
         if (error) throw error;
 
-        databaseMascotas = data; // Guardamos en la caché global interna
+        databaseMascotas = data; // Respaldar datos en la caché global interna
         renderizarTablaMascotas(databaseMascotas);
 
     } catch (error) {
@@ -96,21 +99,24 @@ async function cargarMascotasRegistradas() {
     }
 }
 
+// Función encargada exclusivamente de dibujar las filas o borrar la tabla si no hay coincidencias
 function renderizarTablaMascotas(listaMascotas) {
+    // Limpiamos las filas anteriores por completo
     petsTableBody.innerHTML = "";
 
+    // Requerimiento especial: Si el filtro resulta vacío, mostrar la alerta de "No se encontraron..."
     if (listaMascotas.length === 0) {
-        tableLoader.textContent = "No hay registros clínicos que coincidan.";
+        tableLoader.textContent = "No se encontraron mascotas registradas con esta especie.";
         tableLoader.classList.remove('hidden');
-        return;
+        return; // Detiene la ejecución para dejar la tabla limpia
     }
 
+    // Ocultar loader si hay datos válidos que renderizar
     tableLoader.classList.add('hidden');
 
+    // Insertar dinámicamente cada fila requerida por el listado obligatorio
     listaMascotas.forEach(m => {
         const row = document.createElement('tr');
-        
-        // Mapeamos los datos de dueños y mascotas requeridos en el listado
         row.innerHTML = `
             <td><strong>${m.nombre_mascota}</strong></td>
             <td>${m.edad_mascota} años</td>
@@ -137,7 +143,7 @@ petForm.addEventListener('submit', async (e) => {
     btnSubmit.textContent = "Sincronizando paciente...";
     responseMessage.className = "hidden";
 
-    // Captura de entradas textuales y numéricas
+    // Capturar inputs
     const petName = document.getElementById('petName').value;
     const petAge = document.getElementById('petAge').value;
     const petWeight = document.getElementById('petWeight').value;
@@ -148,7 +154,7 @@ petForm.addEventListener('submit', async (e) => {
     const ownerEmail = document.getElementById('ownerEmail').value;
     const observations = document.getElementById('observations').value;
 
-    // IDs foráneos seleccionados
+    // Capturar IDs foráneos
     const especieId = speciesSelect.value;
     const razaId = breedSelect.value;
     const atencionId = attentionSelect.value;
@@ -181,7 +187,7 @@ petForm.addEventListener('submit', async (e) => {
         responseMessage.className = "success";
         petForm.reset();
 
-        // Refrescar automáticamente la tabla para ver el nuevo registro insertado
+        // Actualización inmediata del listado en la misma página
         await cargarMascotasRegistradas();
 
     } catch (err) {
@@ -195,7 +201,7 @@ petForm.addEventListener('submit', async (e) => {
 });
 
 // ==========================================================================
-// 4. FILTRO OBLIGATORIO POR ESPECIE (TRAÍDO DESDE CATÁLOGO)
+// 4. FILTRO OBLIGATORIO POR ESPECIE (CORREGIDO POR ID NUMÉRICO)
 // ==========================================================================
 filterSpecies.addEventListener('change', (e) => {
     const seleccion = e.target.value;
@@ -203,13 +209,16 @@ filterSpecies.addEventListener('change', (e) => {
     if (seleccion === "TODOS") {
         renderizarTablaMascotas(databaseMascotas);
     } else {
-        // Filtramos contrastando con la propiedad relacional inyectada por el JOIN (.especies.nombre)
-        const mascotasFiltradas = databaseMascotas.filter(m => m.especies && m.especies.nombre === seleccion);
+        // Filtramos directamente comparando el ID numérico guardado en la mascota
+        const mascotasFiltradas = databaseMascotas.filter(m => {
+            return m.id_especie === parseInt(seleccion);
+        });
+        
         renderizarTablaMascotas(mascotasFiltradas);
     }
 });
 
-// CICLO DE INICIO: Levantar toda la data relacional al abrir la página web
+// INITIALIZATION: Cargar toda la data relacional al levantar la app
 window.addEventListener('DOMContentLoaded', () => {
     inicializarCatalogos();
     cargarMascotasRegistradas();
