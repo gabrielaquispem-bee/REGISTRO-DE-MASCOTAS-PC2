@@ -205,7 +205,7 @@ filterSpecies.addEventListener('change', (e) => {
     } else {
         // Filtramos contrastando con la propiedad relacional inyectada por el JOIN (.especies.nombre)
         const mascotasFiltradas = databaseMascotas.filter(m => m.especies && m.especies.nombre === seleccion);
-        renderizarTablaMascotas(mascotasfiltradas);
+        renderizarTablaMascotas(mascotasFiltradas);
     }
 });
 
