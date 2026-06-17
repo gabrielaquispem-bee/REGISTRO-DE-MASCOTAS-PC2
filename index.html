@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veterinaria - Registro Cloud</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        
+        <div class="card-panel">
+            <h2>Registro de Pacientes (Mascotas)</h2>
+            <form id="petForm">
+                
+                <div class="input-group">
+                    <label>Nombre de la Mascota</label>
+                    <input type="text" id="petName" placeholder="Ej. Toby" required>
+                </div>
+
+                <div class="inline-group">
+                    <div class="input-group">
+                        <label>Edad (Años)</label>
+                        <input type="number" id="petAge" placeholder="Ej. 3" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Peso (Kg)</label>
+                        <input type="number" step="0.01" id="petWeight" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="input-group">
+                        <label>Nombre del Dueño</label>
+                        <input type="text" id="ownerFirstName" placeholder="Juan" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Apellido del Dueño</label>
+                        <input type="text" id="ownerLastName" placeholder="Pérez" required>
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="input-group">
+                        <label>DNI del Dueño</label>
+                        <input type="text" id="ownerDni" maxlength="8" placeholder="8 dígitos" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Celular</label>
+                        <input type="text" id="ownerPhone" maxlength="9" placeholder="9** *** ***" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="ownerEmail" placeholder="ejemplo@correo.com" required>
+                </div>
+
+                <div class="inline-group">
+                    <div class="input-group">
+                        <label>Especie</label>
+                        <select id="speciesSelect" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Raza</label>
+                        <select id="breedSelect" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="inline-group">
+                    <div class="input-group">
+                        <label>Tipo de Atención</label>
+                        <select id="attentionSelect" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Condición Médica</label>
+                        <select id="medicalSelect" required>
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Observaciones Adicionales</label>
+                    <input type="text" id="observations" placeholder="Detalles de la condición o antecedentes...">
+                </div>
+
+                <button type="submit" id="btnSubmit">Registrar Mascota</button>
+            </form>
+            <div id="responseMessage" class="hidden"></div>
+        </div>
+
+        <div class="card-panel list-panel">
+            <div class="list-header">
+                <h2>Mascotas registradas</h2>
+                
+                <div class="filter-box">
+                    <label for="filterSpecies">Filtrar por Especie:</label>
+                    <select id="filterSpecies">
+                        </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mascota</th>
+                            <th>Edad</th>
+                            <th>Peso</th>
+                            <th>Dueño</th>
+                            <th>DNI Dueño</th>
+                            <th>Celular</th>
+                            <th>Especie</th>
+                            <th>Raza</th>
+                            <th>Atención</th>
+                            <th>Condición</th>
+                        </tr>
+                    </thead>
+                    <tbody id="petsTableBody">
+                        </tbody>
+                </table>
+                <div id="tableLoader" class="table-status">Conectando a la red veterinaria...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
